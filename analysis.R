@@ -1,5 +1,6 @@
 # set up
 library(RCurl)
+library(mgcv)
 setwd("~/Documents/GitHub/covid-19-burden-mapping-retrospective")
 
 # prep data 
@@ -79,5 +80,30 @@ for(fips in demog$Id2)
 
 }
 
-data<-data.frame(fips=data.fips,name=name,p.rural=p.rural,tot.pop=tot.pop,cases=cases,deaths=deaths)
+data<-data.frame(fips=data.fips,name=name,p.rural=p.rural,tot.pop=tot.pop,cases=cases,deaths=deaths,cases.per.cap=cases/tot.pop,deaths.per.cap=deaths/tot.pop)
 
+# analysis
+
+## plot data
+
+par(mfrow=c(1,2))
+plot(data$p.rural,data$cases.per.cap,xlab="% rural",ylab="cases per capita")
+plot(data$p.rural,data$deaths.per.cap,xlab="% rural",ylab="deaths per capita")
+
+## gams
+
+case.mod.gam<-gam(cases.per.cap~s(p.rural),data=data)
+case.mod.gamlss<-gam(list(cases.per.cap~s(p.rural),~s(p.rural)),data=data,family=gaulss())
+death.mod.gam<-gam(deaths.per.cap~s(p.rural),data=data)
+death.mod.gamlss<-gam(list(deaths.per.cap~s(p.rural),~s(p.rural)),data=data,family=gaulss())
+
+xx<-data.frame(p.rural=seq(0,1,.01))
+case.pred<-predict.gam(case.mod.gamlss,newdata = xx,type="response")
+plot(case.pred[,1],ylim=c(.0,.035),type="l")
+points(case.pred[,1]+1/case.pred[,2],type="l",lty=2)
+points(case.pred[,1]-1/case.pred[,2],type="l",lty=2)
+
+death.pred<-predict.gam(death.mod.gamlss,newdata = xx,type="response")
+plot(death.pred[,1],ylim=c(-1.1,1.1),type="l")
+points(death.pred[,1]+1/death.pred[,2],type="l",lty=2)
+points(death.pred[,1]-1/death.pred[,2],type="l",lty=2)
