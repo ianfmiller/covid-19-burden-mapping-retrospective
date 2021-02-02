@@ -107,3 +107,32 @@ death.pred<-predict.gam(death.mod.gamlss,newdata = xx,type="response")
 plot(death.pred[,1],ylim=c(-1.1,1.1),type="l")
 points(death.pred[,1]+1/death.pred[,2],type="l",lty=2)
 points(death.pred[,1]-1/death.pred[,2],type="l",lty=2)
+
+# how do deaths per capita compare to cases per capita? Do we see an unusually high death burden relative to case burden in rural areas?
+
+## linear model approach
+mod<-lm(deaths.per.cap~cases.per.cap+p.rural,data=data)
+plot(data$cases.per.cap,data$deaths.per.cap,xlab="cases per capita",ylab="deaths per capita")
+abline(8.921e-05+0*-8.861e-05,2.063e-02,col=rainbow(3)[1])
+abline(8.921e-05+0.5*-8.861e-05,2.063e-02,col=rainbow(3)[2])
+abline(8.921e-05+1.0*-8.861e-05,2.063e-02,col=rainbow(3)[3])
+legend("topright",legend=c("0% rural","50% rural","100% rural"),lty=1,col=rainbow(3))
+
+## gam approach
+mod<-gam(deaths.per.cap~s(cases.per.cap)+s(p.rural),data=data)
+xx<-seq(0,.15,.001)
+yy1<-rep(0,times=length(xx))
+yy2<-rep(.5,times=length(xx))
+yy3<-rep(1,times=length(xx))
+
+new.data1<-data.frame(cases.per.cap=xx,p.rural=yy1)
+new.data2<-data.frame(cases.per.cap=xx,p.rural=yy2)
+new.data3<-data.frame(cases.per.cap=xx,p.rural=yy3)
+
+plot(data$cases.per.cap,data$deaths.per.cap,xlab="cases per capita",ylab="deaths per capita")
+legend("topright",legend=c("0% rural","50% rural","100% rural"),lty=1,col=rainbow(3))
+
+points(xx,predict(mod,newdata = new.data1,type="response"),type="l",col=rainbow(3)[1])
+points(xx,predict(mod,newdata = new.data2,type="response"),type="l",col=rainbow(3)[2])
+points(xx,predict(mod,newdata = new.data3,type="response"),type="l",col=rainbow(3)[3])
+
